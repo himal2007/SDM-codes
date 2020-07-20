@@ -1,2 +1,2 @@
 # SDM-codes
-This comprises scripts for species distribution modelling that I am doing for my PhD project.
+This comprises a collection of scripts that I used for species distribution modelling during my PhD project.
