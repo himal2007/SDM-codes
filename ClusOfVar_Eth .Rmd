@@ -1,0 +1,92 @@
+---
+title: "Covariate selection_Ethiopia"
+author: "Himal"
+date: "19/06/2020"
+output: 
+  html_document:
+    theme: united
+    toc: yes
+    toc_depth: 4
+    toc_float: yes
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_knit$set(root.dir = "/Users/oshin/OneDrive - LA TROBE UNIVERSITY/Onchocerciasis")
+```
+
+The purpose of this code is to perform clustering analysis on covariates to check the multi-collinearity. Based on the clustering analysis, it returns the desired number of least collinear variables for load into the model.
+
+These codes are based on a [published literature](https://www.nature.com/articles/s41586-019-1418-6).
+
+```{r}
+# Load the libraries without any messages
+suppressMessages(library(ClustOfVar))
+suppressMessages(library(tictoc)) # record all timings when a complex script is running
+suppressMessages(library(tidyverse))
+suppressMessages(library(caret)) # classification and regression training
+```
+Importing the data 
+
+```{r}
+data = read.csv("PhD/Data/eth_prev_data_c_covs.csv")
+str(data)  # inspect the data
+```
+
+Isolate the covariate data without any of the dependent variables
+```{r}
+covariateDF = subset(data, select = -c(X, N, CASES, YEAR_START, LAT, LONG, DX_CODE, NID, DX_GROUP))
+print("Covariate Variable Names")
+print(colnames(covariateDF))
+```
+
+Examining the numbers of NAs
+```{r}
+numberofNAs = sapply(covariateDF, function(y)sum(length(which(is.na(y)))))
+data.frame(numberofNAs)
+
+# make the dataset with complete data
+completeData = covariateDF[complete.cases(covariateDF),]
+dim(completeData)
+```
+
+## Clustering
+```{r}
+tic()
+
+# Run the clustering function and plot the variables
+tree = hclustvar(X.quanti = completeData)
+plot(tree)
+
+toc()
+```
+Preparing desired number of clusters to generate. For now, I am preparing list of five, ten and fifteen covariates.
+```{r}
+numOfClusters = c(5,10,15) 
+```
+
+```{r}
+emptyVarsList = list()  # empty list to store variables from clustering
+
+for (nC in numOfClusters) {  # loop the clustering across the desired number of clusters
+  set.seed(42) # set random seed number
+  part = cutreevar(tree, nC) # top variables in each cluster
+  midVariableList = c()  # Instantiate empty list to store variables
+  # extract only the names of the variables
+  namesListWithNulls = lapply(part$var, rownames)
+  namesListWithoutNulls = Filter(Negate(function(x) is.null(unlist(x))),
+                                 namesListWithNulls)
+  # ascertain the top variables from the KMeans Clustering
+  # and store it in a list
+  for (j in c(1:length(namesListWithoutNulls))) {
+    midVariableList[j] = namesListWithoutNulls[[j]][1]
+  }
+  
+  # prep the variable list for input into the model calls
+  varsToInclude = list((midVariableList))
+  emptyVarsList[match(nC, numOfClusters)] = varsToInclude
+}
+
+print(emptyVarsList)
+```
+
+Not sure why it doesn't return the complete list of covariates we want. But, we can manually choose more covariates looking at the dendogram tree and also based on what's known from the literature.
