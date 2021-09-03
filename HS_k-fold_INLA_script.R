@@ -1,7 +1,7 @@
 # Validation statistics using k fold cross validation
 ## Model cross validation: k-fold cross validation (5-fold, 10-fold, 20-fold CV)
-    # + Correlation coefficient
-    # + RMSE
+    #  Correlation coefficient
+    #  RMSE
 
 ### Install/load packages
 packages <- c("tidyverse", "INLA", "INLAutils", "devtools", "sp",
